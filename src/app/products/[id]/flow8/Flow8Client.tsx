@@ -112,16 +112,16 @@ export function Flow8Client({
     if (state === 'AI_DRAFTING' && variants.length === 0 && !loading) {
       setLoading(true);
       setError(null);
-      fetch('/api/ai/flow8', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
+      (async () => {
+        try {
+          const res = await fetch('/api/ai/flow8', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId }),
+          });
+          const data = await res.json();
           if (!res.ok) {
-            const errorMsg = data.error ?? 'Invalid response';
-            throw new Error(errorMsg);
+            throw new Error(data.error ?? 'Invalid response');
           }
           if (!data.variants || data.variants.length < 3) {
             throw new Error(data.error ?? 'Invalid response: expected 3 variants');
@@ -136,12 +136,13 @@ export function Flow8Client({
             image_direction: data.image_direction,
             state: 'SELECTION',
           });
-        })
-        .catch((e) => {
+        } catch (e) {
           setError(e instanceof Error ? e.message : 'Failed to generate assets');
           setState('AI_DRAFTING');
-        })
-        .finally(() => setLoading(false));
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
   }, [hasActiveExperiment, isLocked, productId, state, variants.length, loading, saveDraft]);
 
